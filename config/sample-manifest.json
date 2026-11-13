@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-13T00:00:00Z",
+  "channels": [
+    {
+      "id": "stable",
+      "target": { "version": "1.4.2", "versionCode": 142, "apiVersion": "1.21.11" },
+      "minSupported": { "version": "1.0.0", "apiVersion": "1.21.4" },
+      "minClientVersion": "2.3.0",
+      "mode": "OPTIONAL",
+      "rolloutPercent": 100,
+      "assets": [
+        {
+          "platform": "paper-plugin",
+          "fileName": "XxxPlugin-1.4.2.jar",
+          "size": 0,
+          "sha256": "",
+          "downloads": [
+            { "mirror": "gh-proxy", "url": "https://github.com/ChaosSurvivalProject/update-gate/releases/download/v1.4.2/XxxPlugin-1.4.2.jar" }
+          ]
+        },
+        {
+          "platform": "android",
+          "abi": "arm64-v8a",
+          "fileName": "app-arm64-v8a-1.4.2.apk",
+          "size": 0,
+          "sha256": "",
+          "signatureFingerprint": "",
+          "patch": {
+            "fromVersionCode": 141,
+            "fileName": "app-141-142.patch",
+            "size": 0,
+            "sha256": "",
+            "algorithm": "bsdiff"
+          },
+          "downloads": [
+            { "mirror": "gh-proxy", "url": "https://github.com/ChaosSurvivalProject/update-gate/releases/download/v1.4.2/app-arm64-v8a-1.4.2.apk" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'   # 仅打 tag v* 触发发布
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ---------- 1) 构建服务端 jar ----------
+  build-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build server jar (zero warnings)
+        run: ./gradlew :server:build --no-daemon
+      - name: Upload server jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-jar
+          path: server/build/libs/UpdateGate-*.jar
+
+  # ---------- 2) 构建各 ABI apk ----------
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Grant execute permission
+        run: chmod +x ./gradlew
+      - name: Build release APKs (per ABI)
+        working-directory: android
+        run: ../gradlew assembleRelease
+        # 提示：生产请配置 release 签名（secrets.UPDATE_KEYSTORE_*）；
+        # 当前用 Gradle 默认 debug keystore 签名以便演示安装。
+      - name: Upload android apks
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apks
+          path: android/build/outputs/apk/release/*.apk
+
+  # ---------- 3) 生成 manifest + 签名 + 发布 ----------
+  publish:
+    needs: [build-server, build-android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate manifest.json
+        env:
+          ORG: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          VERSION_CODE=$(echo "$VERSION" | awk -F. '{printf "%d%02d%02d", $1,$2,$3}')
+          echo "version=$VERSION versionCode=$VERSION_CODE"
+          python3 - <<'PY'
+          import os, json, glob, hashlib, subprocess
+          org=os.environ['ORG']; repo=os.environ['REPO']
+          tag=os.environ['TAG']; ver=os.environ['VERSION']
+          vc=int(os.environ['VERSION_CODE'])
+          def sha(p):
+              h=hashlib.sha256()
+              with open(p,'rb') as f:
+                  for c in iter(lambda:f.read(1<<20), b''): h.update(c)
+              return h.hexdigest()
+          def sz(p): return os.path.getsize(p)
+          def latest(pattern):
+              fs=sorted(glob.glob(pattern)); return fs[-1] if fs else None
+          assets=[]
+          jar=latest('artifacts/server-jar/UpdateGate-*.jar')
+          if jar:
+              assets.append({"platform":"paper-plugin","fileName":os.path.basename(jar),
+                  "size":sz(jar),"sha256":sha(jar),
+                  "downloads":[{"mirror":"github","url":f"https://github.com/{org}/{repo}/releases/download/{tag}/{os.path.basename(jar)}"}]})
+          for abi in ["arm64-v8a","armeabi-v7a","x86_64"]:
+              apk=latest(f'artifacts/android-apks/*-{abi}-release.apk')
+              if apk:
+                  assets.append({"platform":"android","abi":abi,"fileName":os.path.basename(apk),
+                      "size":sz(apk),"sha256":sha(apk),
+                      "downloads":[{"mirror":"github","url":f"https://github.com/{org}/{repo}/releases/download/{tag}/{os.path.basename(apk)}"}]})
+          patch=latest('artifacts/android-apks/*-patch-*.patch')
+          if patch:
+              assets[-1]["patch"]={"fromVersionCode": vc-1, "fileName":os.path.basename(patch),
+                  "size":sz(patch),"sha256":sha(patch),"algorithm":"bsdiff"}
+          manifest={"schemaVersion":1,
+                    "generatedAt":subprocess.check_output(['date','-u','+%Y-%m-%dT%H:%M:%SZ']).decode().strip(),
+                    "channels":[{"id":"stable","target":{"version":ver,"versionCode":vc,"apiVersion":"1.21.11"},
+                      "minSupported":{"version":"1.0.0","apiVersion":"1.21.4"},"minClientVersion":"2.3.0",
+                      "mode":"OPTIONAL","rolloutPercent":100,"assets":assets}]}
+          with open('manifest.json','w') as f: json.dump(manifest,f,indent=2,ensure_ascii=False)
+          print(open('manifest.json').read())
+          PY
+
+      - name: Sign manifest (Ed25519)
+        env:
+          SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          # 用 ACTIONS 私钥对 manifest 纯 Ed25519 签名；公钥硬编码进客户端（Crypto.kt / IntegrityVerifier.java）
+          echo "$SIGNING_KEY" > key.pem
+          openssl pkeyutl -sign -inkey key.pem -rawin -in manifest.json -out manifest.json.sig
+          base64 -w0 manifest.json.sig > manifest.json.sig.b64
+          echo "signature(b64): $(head -c 32 manifest.json.sig.b64)..."
+
+      - name: Create GitHub Release & upload assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release create "${{ github.ref_name }}" --title "Release ${{ github.ref_name }}" \
+            --notes "自动发布：版本门禁 + 多加速源竞速下载 + 原子替换" \
+            manifest.json manifest.json.sig.b64 \
+            artifacts/server-jar/*.jar artifacts/android-apks/*.apk
+
+      - name: Stage latest.json for gh-pages
+        run: |
+          set -euo pipefail
+          mkdir -p updates-staging/updates
+          cp manifest.json updates-staging/updates/latest.json
+          cp manifest.json.sig.b64 updates-staging/updates/latest.json.sig
+
+      - name: Publish latest.json to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./updates-staging
+          destination_dir: .

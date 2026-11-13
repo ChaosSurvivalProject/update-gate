@@ -1,0 +1,4 @@
+// 根工程仅包含服务端模块（Paper 插件）。
+// Android 客户端为独立 Gradle 工程，位于 android/ 目录，由 CI 单独构建（见 .github/workflows）。
+rootProject.name = 'update-gate'
+include 'server'

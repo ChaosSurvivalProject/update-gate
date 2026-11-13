@@ -1,0 +1,16 @@
+name: UpdateGate
+version: "1.0.0"
+main: com.updategate.UpdateGatePlugin
+api-version: "1.21.11"
+authors:
+  - UpdateGate Team
+description: 版本门禁 + 多加速源竞速下载 + 原子替换 更新模块（Paper 插件）
+website: https://github.com/ChaosSurvivalProject/update-gate
+commands:
+  updategate:
+    description: 更新检查 / 应用 / 回滚
+    usage: /updategate check|apply|rollback
+    permission: updategate.admin
+permissions:
+  updategate.admin:
+    default: op

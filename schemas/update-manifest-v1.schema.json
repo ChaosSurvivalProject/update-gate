@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/ChaosSurvivalProject/update-gate/main/schemas/update-manifest-v1.schema.json",
+  "title": "Update Manifest V1",
+  "description": "版本门禁 + 多加速源竞速下载 + 原子替换 更新模块的版本契约（唯一真相源）。",
+  "type": "object",
+  "required": ["schemaVersion", "generatedAt", "channels"],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "契约版本，当前固定为 1。"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "manifest 生成时间，RFC3339（如 2026-11-13T00:00:00Z）。"
+    },
+    "channels": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/channel" }
+    }
+  },
+  "$defs": {
+    "channel": {
+      "type": "object",
+      "required": ["id", "target", "minSupported", "minClientVersion", "mode", "rolloutPercent", "assets"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": ["stable", "beta"],
+          "description": "渠道。beta 渠道仅对开启了 preRelease 的客户端可见。"
+        },
+        "target": { "$ref": "#/$defs/target" },
+        "minSupported": {
+          "type": "object",
+          "required": ["version", "apiVersion"],
+          "description": "服务端/客户端仍被支持的最低版本。低于此值须强制升级，禁止自动跨版本更新。",
+          "properties": {
+            "version": { "type": "string", "description": "最低支持的语义化版本（major.minor.patch，可含 preRelease/build）。" },
+            "apiVersion": { "type": "string", "description": "最低支持的服务器 api-version（如 1.21.4）。" }
+          }
+        },
+        "minClientVersion": {
+          "type": "string",
+          "description": "客户端最低版本（用于 BLOCKED_CLIENT_TOO_OLD 判定）。"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["OPTIONAL", "REQUIRED"],
+          "description": "更新模式。REQUIRED 为强更，不可跳过；OPTIONAL 允许「稍后再说」。"
+        },
+        "rolloutPercent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "灰度放量百分比，0-100。"
+        },
+        "assets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/asset" }
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": ["version", "versionCode", "apiVersion"],
+      "properties": {
+        "version": { "type": "string", "description": "目标语义化版本（如 1.4.2）。" },
+        "versionCode": { "type": "integer", "description": "目标版本号（仅 Android 使用，如 142）。" },
+        "apiVersion": { "type": "string", "description": "目标所要求的服务器 api-version（如 1.21.11）。" }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": ["platform", "fileName", "size", "sha256", "downloads"],
+      "properties": {
+        "platform": {
+          "type": "string",
+          "enum": ["paper-plugin", "android"],
+          "description": "资产平台类型。"
+        },
+        "abi": {
+          "type": "string",
+          "description": "Android 专用：应用二进制接口，如 arm64-v8a、armeabi-v7a、x86_64。"
+        },
+        "fileName": { "type": "string", "description": "文件名（含版本，如 XxxPlugin-1.4.2.jar）。" },
+        "size": { "type": "integer", "minimum": 0, "description": "文件字节大小。" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$", "description": "全量 sha256（小写十六进制 64 位）。" },
+        "signatureFingerprint": {
+          "type": "string",
+          "description": "Android 专用：APK 签名指纹（如 SHA-256 十六进制），用于增量合成后校验。"
+        },
+        "patch": {
+          "type": "object",
+          "required": ["fromVersionCode", "fileName", "size", "sha256", "algorithm"],
+          "description": "增量补丁（Android 专用）。仅当本地 versionCode == fromVersionCode 时可用。",
+          "properties": {
+            "fromVersionCode": { "type": "integer", "description": "补丁所基于的起始 versionCode。" },
+            "fileName": { "type": "string" },
+            "size": { "type": "integer", "minimum": 0 },
+            "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+            "algorithm": { "type": "string", "enum": ["bsdiff"], "description": "增量算法，当前仅支持 bsdiff。" }
+          }
+        },
+        "downloads": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["mirror", "url"],
+            "properties": {
+              "mirror": { "type": "string", "description": "镜像标识，如 gh-proxy。" },
+              "url": { "type": "string", "format": "uri", "description": "该镜像下的完整下载 URL（仅用于公开资源，不得携带任何凭证）。" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

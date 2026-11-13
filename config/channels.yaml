@@ -1,0 +1,33 @@
+# 远端开关 / 渠道配置（kill-switch）
+# 拉取地址固定为 gh-pages 分支的 /updates/latest.json（由 release.yml 回写），
+# 本文件为「带开关的渠道覆盖层」，客户端与服务端均可按需合并。
+#
+# 安全红线：本文件与 latest.json 均为公开资源，严禁写入任何 Token/凭证。
+
+# 一键停更总开关：enabled=false 时所有渠道立即停止更新。
+enabled: true
+
+# 各渠道覆盖配置；id 必须与 manifest 中 channels[].id 对应。
+channels:
+  - id: stable
+    enabled: true
+    # 可选：灰度放量覆盖（0-100），为空则使用 manifest 中的 rolloutPercent。
+    rolloutPercent: 100
+  - id: beta
+    enabled: false
+    # beta 默认关闭，仅内部/白名单用户在客户端开启 preRelease 后可见。
+    rolloutPercent: 0
+
+# 镜像池权重覆盖（可选）。key 为镜像标识，与 MirrorPool 内置列表一致。
+# weight 越高越优先；health 由 mirror-probe.yml 实时产出（见 mirrors-health.json）。
+mirrorWeights:
+  gh-proxy: 100
+  ghfast: 80
+  ghproxy-net: 70
+  mirror-ghproxy: 70
+  hub-gitmirror: 60
+  moeyy: 60
+  gh-llkk: 50
+  gh-jasonzeng: 30
+  direct: 40
+  jsdelivr: 20

@@ -1,0 +1,5 @@
+// 根工程公共配置（无源码，仅聚合子工程设置）
+allprojects {
+    group = 'com.updategate'
+    version = '1.0.0'
+}

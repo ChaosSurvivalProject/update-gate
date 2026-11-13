@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 仅暴露应用内部更新目录，供系统安装器读取 APK；严禁暴露根目录 -->
+    <files-path name="updates" path="updates/" />
+    <cache-path name="updates_cache" path="updates/" />
+</paths>

@@ -1,0 +1,56 @@
+plugins {
+    id 'java'
+    id 'java-library'
+}
+
+java {
+    // 构建目标严格为 Java 21（Paper 1.21.x 要求）
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    // PaperMC 仓库（paper-api）
+    maven {
+        name = 'papermc'
+        url = 'https://repo.papermc.io/repository/maven-public/'
+    }
+}
+
+dependencies {
+    // Paper API（仅编译期需要，运行期由服务端提供）
+    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+
+    // manifest 解析
+    implementation 'com.google.code.gson:gson:2.11.0'
+
+    // 注解（@Nullable 等，编译期）
+    compileOnly 'org.jetbrains:annotations:24.1.0'
+
+    // 测试
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // 零警告要求：把告警视为错误（CI 同样开启）
+    options.compilerArgs << '-Xlint:all' << '-Werror'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+    }
+}
+
+// 输出 jar 名称固定，便于替换逻辑定位
+tasks.named('jar') {
+    archiveBaseName.set('UpdateGate')
+    archiveVersion.set(project.version.toString())
+    destinationDirectory.set(file("$rootDir/server/build/libs"))
+}

@@ -1,0 +1,85 @@
+name: Mirror Probe
+
+on:
+  schedule:
+    # 每 6 小时探测一次镜像三路线（raw / release / api）
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Probe mirrors (raw / release / api) and emit JSON
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, subprocess, datetime
+          ORG, REPO = "ChaosSurvivalProject", "update-gate"
+          MIRRORS = [
+              ("gh-proxy", "https://gh-proxy.com/"),
+              ("ghfast", "https://ghfast.top/"),
+              ("ghproxy-net", "https://ghproxy.net/"),
+              ("mirror-ghproxy", "https://mirror.ghproxy.com/"),
+              ("hub-gitmirror", "https://hub.gitmirror.com/"),
+              ("moeyy", "https://moeyy.cn/gh-proxy/"),
+              ("gh-llkk", "https://gh.llkk.cc/"),
+              ("gh-jasonzeng", "https://gh.jasonzeng.dev/"),
+              ("direct", "https://github.com/"),
+              ("jsdelivr", "https://cdn.jsdelivr.net/gh/"),
+          ]
+          def probe(url):
+              try:
+                  out = subprocess.run(["curl","-s","-o","/dev/null","-m","12","-w","%{http_code}","-L",url],
+                                       capture_output=True, text=True, timeout=20)
+                  return out.stdout.strip()
+              except Exception:
+                  return "000"
+          def status(code):
+              return "ok" if code in ("200","302") else "down"
+          rows = []
+          for mid, base in MIRRORS:
+              if mid == "jsdelivr":
+                  r = probe(f"{base}https://raw.githubusercontent.com/{ORG}/{REPO}/main/README.md")
+                  rel = api = "down"
+              else:
+                  r = probe(f"{base}https://raw.githubusercontent.com/{ORG}/{REPO}/main/README.md")
+                  rel = probe(f"{base}https://github.com/{ORG}/{REPO}/releases/latest")
+                  api = probe(f"{base}https://api.github.com/repos/{ORG}/{REPO}/releases/latest")
+              rows.append({
+                  "id": mid, "base": base,
+                  "routes": {"raw": status(r), "release": status(rel), "api": status(api)},
+                  "ttfbMs": {"raw": None, "release": None, "api": None},
+                  "weight": 50, "cooldownUntil": None,
+              })
+          report = {
+              "schemaVersion": 1,
+              "generatedAt": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "probeIntervalMinutes": 360,
+              "note": "由 .github/workflows/mirror-probe.yml 每 6h 探测生成，覆盖 raw/release/api 三路线。"
+                      "api 路线多数镜像返回 403，元数据禁止走代理池，只用直连或 gh-proxy.com。客户端据此动态调整权重。",
+              "mirrors": rows,
+          }
+          with open("config/mirrors-health.json", "w", encoding="utf-8") as f:
+              json.dump(report, f, indent=2, ensure_ascii=False)
+          print(json.dumps(report, indent=2, ensure_ascii=False))
+          PY
+
+      - name: Commit updated health report
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet config/mirrors-health.json; then
+            git add config/mirrors-health.json
+            git commit -m "chore: update mirror health report"
+            git push
+          else
+            echo "no change"
+          fi
