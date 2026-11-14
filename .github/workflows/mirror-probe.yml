@@ -71,15 +71,16 @@ jobs:
           print(json.dumps(report, indent=2, ensure_ascii=False))
           PY
 
-      - name: Commit updated health report
+      - name: Publish health report to mirror-health branch
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet config/mirrors-health.json; then
-            git add config/mirrors-health.json
-            git commit -m "chore: update mirror health report"
-            git push
-          else
-            echo "no change"
-          fi
+          # 写入独立分支 mirror-health（孤立分支，仅含健康文件），避免污染 main 导致手动 push 分叉。
+          git checkout --orphan mirror-health
+          git rm -rf --cached . >/dev/null 2>&1 || true
+          git add config/mirrors-health.json
+          git commit -m "chore: update mirror health report" || echo "no change"
+          git push -f origin mirror-health
+          # 回到 main，便于后续步骤（如本工作流后续扩展）正常 checkout
+          git checkout -f main || git checkout -f "${GITHUB_REF_NAME}"
