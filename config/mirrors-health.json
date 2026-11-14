@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-13T19:47:33Z",
+  "generatedAt": "2026-11-14T06:33:15Z",
   "probeIntervalMinutes": 360,
   "note": "由 .github/workflows/mirror-probe.yml 每 6h 探测生成，覆盖 raw/release/api 三路线。api 路线多数镜像返回 403，元数据禁止走代理池，只用直连或 gh-proxy.com。客户端据此动态调整权重。",
   "mirrors": [
