@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId = "com.updategate.android"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 142
         versionName = "2.3.0"
         // 多 ABI 拆分：每个 ABI 产出独立 APK（与 manifest assets.abi 对应）

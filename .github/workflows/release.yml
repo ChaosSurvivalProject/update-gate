@@ -45,11 +45,11 @@ jobs:
           java-version: '21'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-      - name: Grant execute permission
-        run: chmod +x ./gradlew
       - name: Build release APKs (per ABI)
         working-directory: android
-        run: ../gradlew assembleRelease
+        run: ./gradlew assembleRelease --no-daemon
+        # 安卓为独立 Gradle 工程（自带 wrapper 与 settings.gradle.kts），
+        # 使用 android/gradlew 构建，避免复用根工程的 server-only 配置。
         # 提示：生产请配置 release 签名（secrets.UPDATE_KEYSTORE_*）；
         # 当前用 Gradle 默认 debug keystore 签名以便演示安装。
       - name: Upload android apks
@@ -129,6 +129,27 @@ jobs:
           openssl pkeyutl -sign -inkey key.pem -rawin -in manifest.json -out manifest.json.sig
           base64 -w0 manifest.json.sig > manifest.json.sig.b64
           echo "signature(b64): $(head -c 32 manifest.json.sig.b64)..."
+
+      - name: Verify signature against hardcoded public key
+        run: |
+          set -euo pipefail
+          # 闭环校验：用源码中硬编码的生产公钥验证刚签名的 manifest，
+          # 一旦生产私钥与客户端公钥不匹配，发布立即失败，避免发布无法验签的包。
+          python3 - <<'PY'
+          import re, pathlib
+          src = pathlib.Path('server/src/main/java/com/updategate/update/IntegrityVerifier.java').read_text()
+          block = re.search(r'UPDATES_PUBLIC_KEY_PEM\s*=(.*?);', src, re.S).group(1)
+          parts = re.findall(r'"([^"]*)"', block)
+          b64 = ''.join(parts)
+          b64 = b64.replace('-----BEGIN PUBLIC KEY-----', '').replace('-----END PUBLIC KEY-----', '')
+          b64 = b64.replace('\\n', '').replace('\n', '').replace(' ', '').strip()
+          pem = "-----BEGIN PUBLIC KEY-----\n" + b64 + "\n-----END PUBLIC KEY-----\n"
+          pathlib.Path('verify_pub.pem').write_text(pem)
+          print("extracted production public key from source")
+          PY
+          openssl pkeyutl -verify -pubin -inkey verify_pub.pem -rawin \
+            -in manifest.json -sigfile manifest.json.sig
+          echo "SIGNATURE_OK: 硬编码公钥可验证本包签名"
 
       - name: Create GitHub Release & upload assets
         env:

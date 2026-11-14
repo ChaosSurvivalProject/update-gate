@@ -3,6 +3,7 @@
 build/
 **/build/
 !gradle/wrapper/gradle-wrapper.jar
+!android/gradle/wrapper/gradle-wrapper.jar
 
 # IntelliJ / IDE
 *.iml

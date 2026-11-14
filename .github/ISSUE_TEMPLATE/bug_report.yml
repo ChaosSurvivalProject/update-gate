@@ -1,0 +1,50 @@
+name: 缺陷报告（Bug Report）
+description: 报告一个可复现的问题
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: 受影响模块
+      options:
+        - 服务端（Paper 插件）
+        - 客户端（Android）
+        - CI / 发布流程
+        - 文档 / 配置
+    validations:
+      required: true
+  - type: textarea
+    id: desc
+    attributes:
+      label: 问题描述
+      description: 简明描述现象
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      description: 一步步操作以复现
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: 环境信息
+      description: 服务端版本 / 客户端版本 / 操作系统 / 网络环境
+    validations:
+      required: false
+  - type: checkboxes
+    id: security
+    attributes:
+      label: 安全提醒
+      options:
+        - label: 本问题不涉及密钥、Token 或安全漏洞（如有请改用 Private vulnerability reporting）
+          required: true
