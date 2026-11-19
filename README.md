@@ -8,7 +8,20 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF.svg)](android/)
 [![Platform](https://img.shields.io/badge/Platform-Paper%201.21%20%2B%20Android-blue.svg)](https://papermc.io)
 
+> **想要最简单的方式？直接用 AI Skill：[`skills/mc-autoupdate`](skills/mc-autoupdate/)。** 一份指南 + 可复制的简洁模块模板，给做好 Paper 插件 / Fabric 1.21.11 客户端模组的 AI 使用，默认「开机自检 + 每周四中午 12:00 更新」。下面的 `server/` `android/` 是完整工程参考，按需取用。
+
 一套从零落地的更新模块，覆盖 **版本门禁（唯一真相源）→ 多加速源竞速下载（代理池竞速 / 分片 / 续传 / 熔断 / 兜底）→ 完整性校验（sha256 + Ed25519 验签）→ 原子替换（重启生效 / 回滚）** 的完整链路，同时提供 **Paper 服务端插件（Java 21）** 与 **Android 客户端（Kotlin + Compose）** 两套实现，并配套 **GitHub Releases + CDN 加速 + 灰度发布** 的 CI。
+
+## 推荐入口：AI Skill（简单方案）
+
+[`skills/mc-autoupdate`](skills/mc-autoupdate/) 是本仓库首选的轻量交付：
+
+- **一份指南**（`SKILL.md`）：告诉 AI 在做好插件/模组后如何直接内置更新，默认不反问。
+- **简单模块模板**：`references/paper.md`（Paper 插件）、`references/fabric.md`（Fabric 1.21.11 客户端模组）、`references/contract.md`（版本契约与门禁）。
+- **默认策略**：开机自检一次 + **每周四中午 12:00** 定时检查（Asia/Shanghai），来源 GitHub Releases，带版本门禁与 sha256 校验，服务端重启生效 / 客户端重启生效。
+- 安装：复制该目录到 `~/.codebuddy/skills/mc-autoupdate`（或 `.claude/skills/`）即可。
+
+下面的完整工程（竞速下载、分片续传、Android 客户端、CI）是进阶参考，简单场景无需使用。
 
 > 仓库：`https://github.com/ChaosSurvivalProject/update-gate`（公开，启用 Actions）
 
