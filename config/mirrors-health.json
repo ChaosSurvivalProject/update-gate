@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-21T07:17:04Z",
+  "probeIntervalMinutes": 360,
+  "note": "由 .github/workflows/mirror-probe.yml 每 6h 探测生成，覆盖 raw/release/api 三路线。api 路线多数镜像返回 403，元数据禁止走代理池，只用直连或 gh-proxy.com。客户端据此动态调整权重。",
+  "mirrors": [
+    {
+      "id": "gh-proxy",
+      "base": "https://gh-proxy.com/",
+      "routes": {
+        "raw": "ok",
+        "release": "ok",
+        "api": "down"
+      },
+      "ttfbMs": {
+        "raw": null,
+        "release": null,
+        "api": null
+      },
+      "weight": 50,
+      "cooldownUntil": null
+    },
+    {
+      "id": "ghfast",
+      "base": "https://ghfast.top/",
+      "routes": {
+        "raw": "ok",
+        "release": "down",
+        "api": "down"
+      },
+      "ttfbMs": {
+        "raw": null,
+        "release": null,
+        "api": null
+      },
+      "weight": 50,
+      "cooldownUntil": null
+    },
+    {
+      "id": "ghproxy-net",
+      "base": "https://ghproxy.net/",
+      "routes": {
+        "raw": "ok",
+        "release": "ok",
+        "api": "down"
+      },
+      "ttfbMs": {
+        "raw": null,
+        "release": null,
+        "api": null
+      },
+      "weight": 50,
+      "cooldownUntil": null
+    },
+    {
+      "id": "mirror-ghproxy",
+      "base": "https://mirror.ghproxy.com/",
+      "routes": {
+        "raw": "down",
+        "release": "down",
+        "api": "down"
+      },
+      "ttfbMs": {
+        "raw": null,
+        "release": null,
+        "api": null
+      },
+      "weight": 50,
+      "cooldownUntil": null
+    },
+    {
+      "id": "hub-gitmirror",
+      "base": "https://hub.gitmirror.com/",
+      "routes": {
+        "raw": "down",
+        "release": "down",
+        "api": "down"
+      },
+      "ttfbMs": {
+        "raw": null,
+        "release": null,
+        "api": null
+      },
+      "weight": 50,
+      "cooldownUntil": null
+    },
+    {
+      "id": "moeyy",
+      "base": "https://moeyy.cn/gh-proxy/",
+      "routes": {
+        "raw": "down",
+        "release": "down",
+        "api": "down"
+      },
+      "ttfbMs": {
+        "raw": null,
+        "release": null,
+        "api": null
+      },
+      "weight": 50,
+      "cooldownUntil": null
+    },
+    {
+      "id": "gh-llkk",
+      "base": "https://gh.llkk.cc/",
+      "routes": {
+        "raw": "down",
+        "release": "down",
+        "api": "down"
+      },
+      "ttfbMs": {
+        "raw": null,
+        "release": null,
+        "api": null
+      },
+      "weight": 50,
+      "cooldownUntil": null
+    },
+    {
+      "id": "gh-jasonzeng",
+      "base": "https://gh.jasonzeng.dev/",
+      "routes": {
+        "raw": "down",
+        "release": "down",
+        "api": "down"
+      },
+      "ttfbMs": {
+        "raw": null,
+        "release": null,
+        "api": null
+      },
+      "weight": 50,
+      "cooldownUntil": null
+    },
+    {
+      "id": "direct",
+      "base": "https://github.com/",
+      "routes": {
+        "raw": "down",
+        "release": "down",
+        "api": "down"
+      },
+      "ttfbMs": {
+        "raw": null,
+        "release": null,
+        "api": null
+      },
+      "weight": 50,
+      "cooldownUntil": null
+    },
+    {
+      "id": "jsdelivr",
+      "base": "https://cdn.jsdelivr.net/gh/",
+      "routes": {
+        "raw": "down",
+        "release": "down",
+        "api": "down"
+      },
+      "ttfbMs": {
+        "raw": null,
+        "release": null,
+        "api": null
+      },
+      "weight": 50,
+      "cooldownUntil": null
+    }
+  ]
+}
