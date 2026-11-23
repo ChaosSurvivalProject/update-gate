@@ -1,5 +1,10 @@
 # UpdateGate · 版本门禁 + 多加速源竞速下载 + 原子替换
 
+<p align="center">
+  <img src="assets/images/banner.png" alt="update-gate 宣传图" width="820">
+</p>
+
+
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Org](https://img.shields.io/badge/org-ChaosSurvivalProject-blue)](https://github.com/ChaosSurvivalProject/update-gate)
 [![Build Server](https://github.com/ChaosSurvivalProject/update-gate/actions/workflows/release.yml/badge.svg)](https://github.com/ChaosSurvivalProject/update-gate/actions/workflows/release.yml)
@@ -11,6 +16,13 @@
 > **想要最简单的方式？直接用 AI Skill：[`skills/mc-autoupdate`](skills/mc-autoupdate/)。** 一份指南 + 可复制的简洁模块模板，给做好 Paper 插件 / Fabric 1.21.11 客户端模组的 AI 使用，默认「开机自检 + 每周四中午 12:00 更新」。下面的 `server/` `android/` 是完整工程参考，按需取用。
 
 一套从零落地的更新模块，覆盖 **版本门禁（唯一真相源）→ 多加速源竞速下载（代理池竞速 / 分片 / 续传 / 熔断 / 兜底）→ 完整性校验（sha256 + Ed25519 验签）→ 原子替换（重启生效 / 回滚）** 的完整链路，同时提供 **Paper 服务端插件（Java 21）** 与 **Android 客户端（Kotlin + Compose）** 两套实现，并配套 **GitHub Releases + CDN 加速 + 灰度发布** 的 CI。
+
+## 效果预览
+
+<p align="center">
+  <img src="assets/images/demo.png" alt="update-gate 演示图" width="720">
+</p>
+
 
 ## 推荐入口：AI Skill（简单方案）
 
